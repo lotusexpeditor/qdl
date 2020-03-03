@@ -29,23 +29,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <ctype.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-static uint8_t to_hex(uint8_t ch)
-{
+static uint8_t to_hex(uint8_t ch) {
 	ch &= 0xf;
 	return ch <= 9 ? '0' + ch : 'a' + ch - 10;
 }
 
-void print_hex_dump(const char *prefix, const void *buf, size_t len)
-{
-	const uint8_t *ptr = buf;
+void print_hex_dump(const char* prefix, const void* buf, size_t len) {
+	const uint8_t* ptr = (const uint8_t*)buf;
 	size_t linelen;
 	uint8_t ch;
 	char line[16 * 3 + 16 + 1];
@@ -81,9 +79,8 @@ void print_hex_dump(const char *prefix, const void *buf, size_t len)
 	}
 }
 
-unsigned attr_as_unsigned(xmlNode *node, const char *attr, int *errors)
-{
-	xmlChar *value;
+unsigned attr_as_unsigned(xmlNode* node, const char* attr, int* errors) {
+	xmlChar* value;
 
 	value = xmlGetProp(node, (xmlChar*)attr);
 	if (!value) {
@@ -91,12 +88,11 @@ unsigned attr_as_unsigned(xmlNode *node, const char *attr, int *errors)
 		return 0;
 	}
 
-	return (unsigned int) strtoul((char*)value, NULL, 10);
+	return (unsigned int)strtoul((char*)value, NULL, 10);
 }
 
-const char *attr_as_string(xmlNode *node, const char *attr, int *errors)
-{
-	xmlChar *value;
+const char* attr_as_string(xmlNode* node, const char* attr, int* errors) {
+	xmlChar* value;
 
 	value = xmlGetProp(node, (xmlChar*)attr);
 	if (!value) {

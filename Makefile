@@ -1,14 +1,14 @@
 OUT := qdl
 
-CFLAGS := -O2 -Wall -g `xml2-config --cflags`
+CXXFLAGS := -O2 -Wall -g `xml2-config --cflags`
 LDFLAGS := `xml2-config --libs` -ludev
 prefix := /usr/local
 
-SRCS := firehose.c qdl.c sahara.c util.c patch.c program.c ufs.c
-OBJS := $(SRCS:.c=.o)
+SRCS := firehose.cpp qdl.cpp sahara.cpp patch.cpp program.cpp ufs.cpp util.cpp
+OBJS := $(SRCS:.cpp=.o)
 
 $(OUT): $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f $(OUT) $(OBJS)

@@ -26,50 +26,58 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#pragma once
 #ifndef __UFS_H__
 #define __UFS_H__
 #include <stdbool.h>
 
-struct qdl_device;
-
-struct ufs_common {
-	unsigned	bNumberLU;
-	bool		bBootEnable;
-	bool		bDescrAccessEn;
-	unsigned	bInitPowerMode;
-	unsigned	bHighPriorityLUN;
-	unsigned	bSecureRemovalType;
-	unsigned	bInitActiveICCLevel;
-	unsigned	wPeriodicRTCUpdate;
-	bool		bConfigDescrLock;
+#include "qdl.h"
+namespace ufs {
+struct Common {
+	unsigned bNumberLU;
+	bool bBootEnable;
+	bool bDescrAccessEn;
+	unsigned bInitPowerMode;
+	unsigned bHighPriorityLUN;
+	unsigned bSecureRemovalType;
+	unsigned bInitActiveICCLevel;
+	unsigned wPeriodicRTCUpdate;
+	bool bConfigDescrLock;
 };
 
-struct ufs_body {
-	unsigned	LUNum;
-	bool		bLUEnable;
-	unsigned	bBootLunID;
-	unsigned	size_in_kb;
-	unsigned	bDataReliability;
-	unsigned	bLUWriteProtect;
-	unsigned	bMemoryType;
-	unsigned	bLogicalBlockSize;
-	unsigned	bProvisioningType;
-	unsigned	wContextCapabilities;
-	const char	*desc;
+struct Body {
+	unsigned LUNum;
+	bool bLUEnable;
+	unsigned bBootLunID;
+	unsigned size_in_kb;
+	unsigned bDataReliability;
+	unsigned bLUWriteProtect;
+	unsigned bMemoryType;
+	unsigned bLogicalBlockSize;
+	unsigned bProvisioningType;
+	unsigned wContextCapabilities;
+	const char* desc;
 
-	struct		ufs_body *next;
+	std::shared_ptr<Body> next;
 };
 
-struct ufs_epilogue {
-	unsigned	LUNtoGrow;
-	bool		commit;
+struct Epilogue {
+	unsigned LUNtoGrow;
+	bool commit;
 };
 
-int ufs_load(const char *ufs_file, bool finalize_provisioning);
-int ufs_provisioning_execute(struct qdl_device *qdl,
-	int (*apply_ufs_common)(struct qdl_device *qdl, struct ufs_common *ufs),
-	int (*apply_ufs_body)(struct qdl_device *qdl, struct ufs_body *ufs),
-	int (*apply_ufs_epilogue)(struct qdl_device *qdl, struct ufs_epilogue *ufs, bool commit));
-bool ufs_need_provisioning(void);
+struct ufs_apply {
+	virtual int apply_ufs_common(std::shared_ptr<Common>& common) = 0;
+	virtual int apply_ufs_body(std::shared_ptr<Body>& body) = 0;
+	virtual int apply_ufs_epilogue(std::shared_ptr<Epilogue>& epilogue,
+								   bool commit) = 0;
+};
+
+int load(const char* ufs_file, bool finalize_provisioning);
+int provisioning_execute(ufs_apply*);
+bool need_provisioning(void);
+
+}  // namespace ufs
 
 #endif
