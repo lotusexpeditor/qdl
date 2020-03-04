@@ -1,17 +1,22 @@
 OUT := qdl
 
-CFLAGS := -O2 -Wall -g `xml2-config --cflags`
+CXXFLAGS := -O2 -Wall -g `xml2-config --cflags` -Iinclude
 LDFLAGS := `xml2-config --libs` -ludev
 prefix := /usr/local
 
-SRCS := firehose.c qdl.c sahara.c util.c patch.c program.c ufs.c
-OBJS := $(SRCS:.c=.o)
+BUILD_DIR := ./build
+
+SRCS := firehose.cpp qdl.cpp sahara.cpp patch.cpp program.cpp ufs.cpp util.cpp
+OBJS = $(addprefix $(BUILD_DIR)/,$(SRCS:.cpp=.cpp.o))
+
+$(BUILD_DIR)/%.cpp.o: %.cpp
+	$(CXX) -c -o $@ $^ $(CXXFLAGS)
 
 $(OUT): $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $(BUILD_DIR)/$@ $^ $(LDFLAGS)
 
 clean:
-	rm -f $(OUT) $(OBJS)
+	rm -f $(BUILD_DIR)/$(OUT) $(OBJS)
 
 install: $(OUT)
-	install -D -m 755 $< $(DESTDIR)$(prefix)/bin/$<
+	install -D -m 755 $(BUILD_DIR)/$< $(DESTDIR)$(prefix)/bin/$<

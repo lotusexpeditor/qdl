@@ -28,58 +28,65 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <errno.h>
+#include "program.h"
+
 #include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <unistd.h>
 
-#include "program.h"
+#include <cerrno>
+#include <cstring>
+#include <iostream>
+#include <sstream>
+
 #include "qdl.h"
-		
-static struct program *programes;
-static struct program *programes_last;
+namespace program {
+static std::shared_ptr<Program> programes;
+static std::shared_ptr<Program> programes_last;
 
-int program_load(const char *program_file)
-{
-	struct program *program;
-	xmlNode *node;
-	xmlNode *root;
-	xmlDoc *doc;
+int load(const char* program_file) {
+	std::shared_ptr<Program> program;
+	xmlNode* node;
+	xmlNode* root;
+	xmlDoc* doc;
 	int errors;
 
 	doc = xmlReadFile(program_file, NULL, 0);
 	if (!doc) {
-		fprintf(stderr, "[PROGRAM] failed to parse %s\n", program_file);
+		std::cerr << "[PROGRAM] failed to parse " << program_file << std::endl;
 		return -EINVAL;
 	}
 
 	root = xmlDocGetRootElement(doc);
-	for (node = root->children; node ; node = node->next) {
+	for (node = root->children; node; node = node->next) {
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
 
 		if (xmlStrcmp(node->name, (xmlChar*)"program")) {
-			fprintf(stderr, "[PROGRAM] unrecognized tag \"%s\", ignoring\n", node->name);
+			std::cerr << "[PROGRAM] unrecognized tag \"" << node->name
+					  << "\", ignoring" << std::endl;
 			continue;
 		}
 
 		errors = 0;
 
-		program = calloc(1, sizeof(struct program));
+		program = std::make_shared<Program>();
 
-		program->sector_size = attr_as_unsigned(node, "SECTOR_SIZE_IN_BYTES", &errors);
-		program->file_offset = attr_as_unsigned(node, "file_sector_offset", &errors);
+		program->sector_size =
+			attr_as_unsigned(node, "SECTOR_SIZE_IN_BYTES", &errors);
+		program->file_offset =
+			attr_as_unsigned(node, "file_sector_offset", &errors);
 		program->filename = attr_as_string(node, "filename", &errors);
 		program->label = attr_as_string(node, "label", &errors);
-		program->num_sectors = attr_as_unsigned(node, "num_partition_sectors", &errors);
-		program->partition = attr_as_unsigned(node, "physical_partition_number", &errors);
+		program->num_sectors =
+			attr_as_unsigned(node, "num_partition_sectors", &errors);
+		program->partition =
+			attr_as_unsigned(node, "physical_partition_number", &errors);
 		program->start_sector = attr_as_string(node, "start_sector", &errors);
 
 		if (errors) {
-			fprintf(stderr, "[PROGRAM] errors while parsing program\n");
-			free(program);
+			std::cerr << "[PROGRAM] errors while parsing program" << std::endl;
 			continue;
 		}
 
@@ -96,12 +103,10 @@ int program_load(const char *program_file)
 
 	return 0;
 }
-	
-int program_execute(struct qdl_device *qdl, int (*apply)(struct qdl_device *qdl, struct program *program, int fd),
-		    const char *incdir)
-{
-	struct program *program;
-	const char *filename;
+
+int execute(program_apply* ptr, const char* incdir) {
+	std::shared_ptr<Program> program;
+	const char* filename;
 	char tmp[PATH_MAX];
 	int ret;
 	int fd;
@@ -112,7 +117,9 @@ int program_execute(struct qdl_device *qdl, int (*apply)(struct qdl_device *qdl,
 
 		filename = program->filename;
 		if (incdir) {
-			snprintf(tmp, PATH_MAX, "%s/%s", incdir, filename);
+			std::stringstream ss;
+			ss << incdir << "/" << filename;
+			strncpy(tmp, ss.str().c_str(), PATH_MAX);
 			if (access(tmp, F_OK) != -1)
 				filename = tmp;
 		}
@@ -120,11 +127,12 @@ int program_execute(struct qdl_device *qdl, int (*apply)(struct qdl_device *qdl,
 		fd = open(filename, O_RDONLY);
 
 		if (fd < 0) {
-			printf("Unable to open %s...ignoring\n", program->filename);
+			std::cout << "Unable to open " << program->filename << "...ignoring"
+					  << std::endl;
 			continue;
 		}
 
-		ret = apply(qdl, program, fd);
+		ret = ptr->apply_program(program, fd);
 
 		close(fd);
 		if (ret)
@@ -143,17 +151,16 @@ int program_execute(struct qdl_device *qdl, int (*apply)(struct qdl_device *qdl,
  * and return the partition number for this. If more than one line matches
  * we're assuming our logic is flawed and return an error.
  */
-int program_find_bootable_partition(void)
-{
-	struct program *program;
-	const char *label;
+int find_bootable_partition(void) {
+	std::shared_ptr<Program> program;
+	const char* label;
 	int part = -ENOENT;
 
 	for (program = programes; program; program = program->next) {
 		label = program->label;
 
 		if (!strcmp(label, "xbl") || !strcmp(label, "xbl_a") ||
-		    !strcmp(label, "sbl1")) {
+			!strcmp(label, "sbl1")) {
 			if (part != -ENOENT)
 				return -EINVAL;
 
@@ -163,3 +170,4 @@ int program_find_bootable_partition(void)
 
 	return part;
 }
+}  // namespace program
