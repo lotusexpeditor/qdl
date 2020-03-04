@@ -16,22 +16,20 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <sstream>
 
 #include "scope_exit.h"
-
-template <typename T, typename Tp>
-constexpr std::shared_ptr<T>& p(std::shared_ptr<Tp>& pt) {
-	return std::dynamic_pointer_cast<T>(pt);
-}
 
 void Sahara::hello(Sahara_pkt& pkt) {
 	Sahara_pkt resp;
 
 	assert(pkt.length == 0x30);
 
-	printf("HELLO version: 0x%x compatible: 0x%x max_len: %d mode: %d\n",
-		   pkt.hello_req.version, pkt.hello_req.compatible,
-		   pkt.hello_req.max_len, pkt.hello_req.mode);
+	std::cout << std::hex << "HELLO version: 0x" << pkt.hello_req.version
+			  << " compatible: 0x" << pkt.hello_req.compatible
+			  << " max_len: " << std::dec << pkt.hello_req.max_len
+			  << " mode: " << pkt.hello_req.mode << std::endl;
 
 	resp.cmd = 2;
 	resp.length = 0x30;
@@ -55,7 +53,7 @@ int Sahara::read_common(const char* mbn, off_t offset, size_t len) {
 	scope_exit progfd_close([progfd]() { close(progfd); });
 
 	buf = std::shared_ptr<char[]>(new char[len]);
-	if (!buf.get())
+	if (!buf)
 		return -ENOMEM;
 
 	lseek(progfd, offset, SEEK_SET);
@@ -76,8 +74,9 @@ void Sahara::read(Sahara_pkt& pkt, const char* mbn) {
 
 	assert(pkt.length == 0x14);
 
-	printf("READ image: %d offset: 0x%x length: 0x%x\n", pkt.read_req.image,
-		   pkt.read_req.offset, pkt.read_req.length);
+	std::cout << "READ image: " << pkt.read_req.image << " offset: 0x"
+			  << std::hex << pkt.read_req.offset << " length: 0x"
+			  << pkt.read_req.length << std::endl;
 
 	ret = Sahara::read_common(mbn, pkt.read_req.offset, pkt.read_req.length);
 	if (ret < 0)
@@ -89,9 +88,9 @@ void Sahara::read64(Sahara_pkt& pkt, const char* mbn) {
 
 	assert(pkt.length == 0x20);
 
-	printf("READ64 image: %" PRId64 " offset: 0x%" PRIx64 " length: 0x%" PRIx64
-		   "\n",
-		   pkt.read64_req.image, pkt.read64_req.offset, pkt.read64_req.length);
+	std::cout << "READ64 image: " << pkt.read64_req.image << std::hex
+			  << " offset: 0x%" << pkt.read64_req.offset << " length: 0x%"
+			  << pkt.read64_req.length << std::endl;
 
 	ret =
 		Sahara::read_common(mbn, pkt.read64_req.offset, pkt.read64_req.length);
@@ -104,11 +103,11 @@ void Sahara::eoi(Sahara_pkt& pkt) {
 
 	assert(pkt.length == 0x10);
 
-	printf("END OF IMAGE image: %d status: %d\n", pkt.eoi.image,
-		   pkt.eoi.status);
+	std::cout << "END OF IMAGE image: " << pkt.eoi.image
+			  << " status: " << pkt.eoi.status << std::endl;
 
 	if (pkt.eoi.status != 0) {
-		printf("received non-successful result\n");
+		std::cout << "received non-successful result" << std::endl;
 		return;
 	}
 
@@ -120,7 +119,7 @@ void Sahara::eoi(Sahara_pkt& pkt) {
 int Sahara::done(Sahara_pkt& pkt) {
 	assert(pkt.length == 0xc);
 
-	printf("DONE status: %d\n", pkt.done_resp.status);
+	std::cout << "DONE status: " << pkt.done_resp.status << std::endl;
 
 	return pkt.done_resp.status;
 }
@@ -139,29 +138,31 @@ int Sahara::run(char* prog_mbn) {
 
 		pkt = (Sahara_pkt*)buf;
 		if (n != pkt->length) {
-			fprintf(stderr, "length not matching");
+			std::cerr << "length not matching";
 			return -EINVAL;
 		}
 
 		switch (pkt->cmd) {
 			case 1:
-				this->hello(*pkt);
+				Sahara::hello(*pkt);
 				break;
 			case 3:
-				this->read(*pkt, prog_mbn);
+				Sahara::read(*pkt, prog_mbn);
 				break;
 			case 4:
-				this->eoi(*pkt);
+				Sahara::eoi(*pkt);
 				break;
 			case 6:
-				this->done(*pkt);
+				Sahara::done(*pkt);
 				done = true;
 				break;
 			case 0x12:
-				this->read64(*pkt, prog_mbn);
+				Sahara::read64(*pkt, prog_mbn);
 				break;
 			default:
-				sprintf(tmp, "CMD%x", pkt->cmd);
+				std::stringstream ss;
+				ss << "CMD" << std::hex << pkt->cmd;
+				strcpy(tmp, ss.str().c_str());
 				print_hex_dump(tmp, buf, n);
 				break;
 		}

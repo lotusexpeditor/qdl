@@ -28,15 +28,17 @@
  */
 #include "ufs.h"
 
-#include <assert.h>
-#include <errno.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cstdbool>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 #include "patch.h"
 #include "qdl.h"
@@ -69,10 +71,9 @@ bool need_provisioning(void) {
 
 std::shared_ptr<Common> parse_common_params(xmlNode* node,
 											bool finalize_provisioning) {
-	std::shared_ptr<Common> result;
+	std::shared_ptr<Common> result(new Common);
 	int errors;
 
-	result = std::make_shared<Common>();
 	errors = 0;
 
 	result->bNumberLU = attr_as_unsigned(node, "bNumberLU", &errors);
@@ -92,7 +93,7 @@ std::shared_ptr<Common> parse_common_params(xmlNode* node,
 		!!attr_as_unsigned(node, "bConfigDescrLock", &errors);
 
 	if (errors) {
-		fprintf(stderr, "[UFS] errors while parsing common\n");
+		std::cerr << "[UFS] errors while parsing common" << std::endl;
 
 		return {NULL};
 	}
@@ -101,10 +102,9 @@ std::shared_ptr<Common> parse_common_params(xmlNode* node,
 }
 
 std::shared_ptr<Body> parse_body(xmlNode* node) {
-	std::shared_ptr<Body> result;
+	std::shared_ptr<Body> result(new Body);
 	int errors;
 
-	result = std::make_shared<Body>();
 	errors = 0;
 
 	result->LUNum = attr_as_unsigned(node, "LUNum", &errors);
@@ -125,22 +125,20 @@ std::shared_ptr<Body> parse_body(xmlNode* node) {
 	result->desc = attr_as_string(node, "desc", &errors);
 
 	if (errors) {
-		fprintf(stderr, "[UFS] errors while parsing body\n");
+		std::cerr << "[UFS] errors while parsing body" << std::endl;
 		return {NULL};
 	}
 	return result;
 }
 
 std::shared_ptr<Epilogue> parse_epilogue(xmlNode* node) {
-	std::shared_ptr<Epilogue> result;
+	std::shared_ptr<Epilogue> result(new Epilogue);
 	int errors = 0;
-
-	result = std::make_shared<Epilogue>();
 
 	result->LUNtoGrow = attr_as_unsigned(node, "LUNtoGrow", &errors);
 
 	if (errors) {
-		fprintf(stderr, "[UFS] errors while parsing epilogue\n");
+		std::cerr << "[UFS] errors while parsing epilogue" << std::endl;
 		return {NULL};
 	}
 	return result;
@@ -154,14 +152,14 @@ int load(const char* ufs_file, bool finalize_provisioning) {
 	std::shared_ptr<Body> ufs_body_tmp;
 
 	if (ufs_common_p) {
-		fprintf(stderr, "Only one UFS provisioning XML allowed, %s ignored\n",
-				ufs_file);
+		std::cerr << "Only one UFS provisioning XML allowed, " << ufs_file
+				  << " ignored" << std::endl;
 		return -EEXIST;
 	}
 
 	doc = xmlReadFile(ufs_file, NULL, 0);
 	if (!doc) {
-		fprintf(stderr, "[UFS] failed to parse %s\n", ufs_file);
+		std::cerr << "[UFS] failed to parse " << ufs_file << std::endl;
 		return -EINVAL;
 	}
 
@@ -172,8 +170,8 @@ int load(const char* ufs_file, bool finalize_provisioning) {
 			continue;
 
 		if (xmlStrcmp(node->name, (xmlChar*)"ufs")) {
-			fprintf(stderr, "[UFS] unrecognized tag \"%s\", ignoring\n",
-					node->name);
+			std::cerr << "[UFS] unrecognized tag \"" << node->name
+					  << "\", ignoring" << std::endl;
 			continue;
 		}
 
@@ -181,17 +179,15 @@ int load(const char* ufs_file, bool finalize_provisioning) {
 			if (!ufs_common_p) {
 				ufs_common_p = parse_common_params(node, finalize_provisioning);
 			} else {
-				fprintf(stderr,
-						"[UFS] Only one common tag is allowed\n"
-						"[UFS] provisioning aborted\n");
+				std::cerr << "[UFS] Only one common tag is allowed" << std::endl
+						  << "[UFS] provisioning aborted" << std::endl;
 				retval = -EINVAL;
 				break;
 			}
 
 			if (!ufs_common_p) {
-				fprintf(stderr,
-						"[UFS] Common tag corrupted\n"
-						"[UFS] provisioning aborted\n");
+				std::cerr << "[UFS] Common tag corrupted" << std::endl
+						  << "[UFS] provisioning aborted" << std::endl;
 				retval = -EINVAL;
 				break;
 			}
@@ -206,9 +202,8 @@ int load(const char* ufs_file, bool finalize_provisioning) {
 					ufs_body_last = ufs_body_tmp;
 				}
 			} else {
-				fprintf(stderr,
-						"[UFS] LU tag corrupted\n"
-						"[UFS] provisioning aborted\n");
+				std::cerr << "[UFS] LU tag corrupted" << std::endl
+						  << "[UFS] provisioning aborted" << std::endl;
 				retval = -EINVAL;
 				break;
 			}
@@ -218,26 +213,25 @@ int load(const char* ufs_file, bool finalize_provisioning) {
 				if (ufs_epilogue_p)
 					continue;
 			} else {
-				fprintf(stderr,
-						"[UFS] Only one finalizing tag is allowed\n"
-						"[UFS] provisioning aborted\n");
+				std::cerr << "[UFS] Only one finalizing tag is allowed"
+						  << std::endl
+						  << "[UFS] provisioning aborted" << std::endl;
 				retval = -EINVAL;
 				break;
 			}
 
 			if (!ufs_epilogue_p) {
-				fprintf(stderr,
-						"[UFS] Finalizing tag corrupted\n"
-						"[UFS] provisioning aborted\n");
+				std::cerr << "[UFS] Finalizing tag corrupted" << std::endl
+						  << "[UFS] provisioning aborted" << std::endl;
 				retval = -EINVAL;
 				break;
 			}
 
 		} else {
-			fprintf(stderr,
-					"[UFS] Unknown tag or %s corrupted\n"
-					"[UFS] provisioning aborted\n",
-					ufs_file);
+			std::cerr << "[UFS] Unknown tag or " << ufs_file << " corrupted"
+					  << std::endl
+					  << "[UFS] provisioning aborted" << std::endl;
+
 			retval = -EINVAL;
 			break;
 		}
@@ -246,10 +240,9 @@ int load(const char* ufs_file, bool finalize_provisioning) {
 	xmlFreeDoc(doc);
 
 	if (!retval && (!ufs_common_p || !ufs_body_p || !ufs_epilogue_p)) {
-		fprintf(stderr,
-				"[UFS] %s seems to be incomplete\n"
-				"[UFS] provisioning aborted\n",
-				ufs_file);
+		std::cerr << "[UFS] " << ufs_file << " seems to be incomplete"
+				  << std::endl
+				  << "[UFS] provisioning aborted" << std::endl;
 		retval = -EINVAL;
 	}
 
@@ -263,17 +256,18 @@ int load(const char* ufs_file, bool finalize_provisioning) {
 		if (ufs_epilogue_p) {
 			ufs_epilogue_p.reset();
 		}
-		fprintf(stderr, "[UFS] %s seems to be corrupted, ignore\n", ufs_file);
+		std::cerr << "[UFS] " << ufs_file << " seems to be corrupted, ignore"
+				  << std::endl;
 		return retval;
 	}
 	if (!finalize_provisioning != !ufs_common_p->bConfigDescrLock) {
-		fprintf(stderr,
-				"[UFS] Value bConfigDescrLock %d in file %s don't match "
-				"command line parameter --finalize-provisioning %d\n"
-				"[UFS] provisioning aborted\n",
-				ufs_common_p->bConfigDescrLock, ufs_file,
-				finalize_provisioning);
-		fprintf(stderr, notice_bconfigdescrlock);
+		std::cerr << "[UFS] Value bConfigDescrLock "
+				  << ufs_common_p->bConfigDescrLock << " in file " << ufs_file
+				  << " don't match "
+					 "command line parameter --finalize-provisioning "
+				  << finalize_provisioning << std::endl
+				  << "[UFS] provisioning aborted" << std::endl;
+		std::cerr << notice_bconfigdescrlock;
 		return -EINVAL;
 	}
 	return 0;
@@ -285,12 +279,13 @@ int provisioning_execute(ufs_apply* prov) {
 
 	if (ufs_common_p->bConfigDescrLock) {
 		int i;
-		printf("Attention!\nIrreversible provisioning will start in 5 s\n");
+		std::cout << "Attention!" << std::endl
+				  << "Irreversible provisioning will start in 5 s" << std::endl;
 		for (i = 5; i > 0; i--) {
-			printf(".\a");
+			std::cout << ".\a";
 			sleep(1);
 		}
-		printf("\n");
+		std::cout << std::endl;
 	}
 
 	// Just ask a target to check the XML w/o real provisioning
@@ -304,9 +299,9 @@ int provisioning_execute(ufs_apply* prov) {
 	}
 	ret = prov->apply_ufs_epilogue(ufs_epilogue_p, false);
 	if (ret) {
-		fprintf(
-			stderr,
-			"UFS provisioning impossible, provisioning XML may be corrupted\n");
+		std::cerr
+			<< "UFS provisioning impossible, provisioning XML may be corrupted"
+			<< std::endl;
 		return ret;
 	}
 

@@ -32,6 +32,7 @@
 #include "ufs.h"
 
 bool qdl_debug;
+bool fw_only;
 
 enum class qdl_file {
 	unknown,
@@ -49,7 +50,7 @@ static qdl_file detect_type(const char* xml_file) {
 
 	doc = xmlReadFile(xml_file, NULL, 0);
 	if (!doc) {
-		fprintf(stderr, "[PATCH] failed to parse %s\n", xml_file);
+		std::cerr << "[PATCH] failed to parse " << xml_file << std::endl;
 		return qdl_file::unknown;
 	}
 
@@ -239,7 +240,7 @@ int Qdl::usb_open() {
 		close(fd);
 	}
 
-	fprintf(stderr, "Waiting for EDL device\n");
+	std::cerr << "Waiting for EDL device" << std::endl;
 
 	for (;;) {
 		fd_set rfds;
@@ -260,7 +261,7 @@ int Qdl::usb_open() {
 		if (!dev_node)
 			continue;
 
-		printf("%s\n", dev_node);
+		std::cout << dev_node << std::endl;
 
 		fd = open(dev_node, O_RDWR);
 		if (fd < 0)
@@ -388,6 +389,7 @@ int main(int argc, char** argv) {
 		{"include", required_argument, 0, 'i'},
 		{"finalize-provisioning", no_argument, 0, 'l'},
 		{"storage", required_argument, 0, 's'},
+		{"firmware", no_argument, 0, 'f'},
 		{0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "di:", options, NULL)) != -1) {
@@ -403,6 +405,9 @@ int main(int argc, char** argv) {
 				break;
 			case 's':
 				storage = optarg;
+				break;
+			case 'f':
+				fw_only = true;
 				break;
 			default:
 				print_usage();

@@ -1,9 +1,11 @@
 #include "patch.h"
 
-#include <errno.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <string.h>
+
+#include <cerrno>
+#include <cstring>
+#include <iostream>
 
 namespace patch {
 
@@ -19,7 +21,7 @@ int load(const char* patch_file) {
 
 	doc = xmlReadFile(patch_file, NULL, 0);
 	if (!doc) {
-		fprintf(stderr, "[PATCH] failed to parse %s\n", patch_file);
+		std::cerr << "[PATCH] failed to parse " << patch_file << std::endl;
 		return -EINVAL;
 	}
 
@@ -29,8 +31,8 @@ int load(const char* patch_file) {
 			continue;
 
 		if (xmlStrcmp(node->name, (xmlChar*)"patch")) {
-			fprintf(stderr, "[PATCH] unrecognized tag \"%s\", ignoring\n",
-					node->name);
+			std::cerr << "[PATCH] unrecognized tag \"" << node->name
+					  << "\", ignoring" << std::endl;
 			continue;
 		}
 
@@ -50,7 +52,7 @@ int load(const char* patch_file) {
 		patch->what = attr_as_string(node, "what", &errors);
 
 		if (errors) {
-			fprintf(stderr, "[PATCH] errors while parsing patch\n");
+			std::cerr << "[PATCH] errors while parsing patch" << std::endl;
 			continue;
 		}
 

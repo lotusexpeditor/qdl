@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <iostream>
 
 #include "ufs.h"
 
@@ -43,7 +44,7 @@ xmlNode* Firehose::response_parse(const char* buf, size_t len, int* error) {
 
 	doc = xmlReadMemory(buf, len, NULL, NULL, 0);
 	if (!doc) {
-		fprintf(stderr, "failed to parse firehose packet\n");
+		std::cerr << "failed to parse firehose packet" << std::endl;
 		*error = -EINVAL;
 		return NULL;
 	}
@@ -57,7 +58,7 @@ xmlNode* Firehose::response_parse(const char* buf, size_t len, int* error) {
 	}
 
 	if (!node) {
-		fprintf(stderr, "firehose packet without data tag\n");
+		std::cerr << "firehose packet without data tag" << std::endl;
 		*error = -EINVAL;
 		xmlFreeDoc(doc);
 		return NULL;
@@ -74,7 +75,7 @@ void Firehose::response_log(xmlNode* node) {
 	xmlChar* value;
 
 	value = xmlGetProp(node, (xmlChar*)"value");
-	printf("LOG: %s\n", value);
+	std::cout << "LOG: " << value << std::endl;
 }
 
 int Firehose::read(int wait, std::function<int(xmlNode*)> response_parser) {
@@ -104,12 +105,12 @@ int Firehose::read(int wait, std::function<int(xmlNode*)> response_parser) {
 		buf[n] = '\0';
 
 		if (qdl_debug)
-			fprintf(stderr, "FIREHOSE READ: %s\n", buf);
+			std::cerr << "FIREHOSE READ: " << buf << std::endl;
 
 		for (msg = buf; msg[0]; msg = end) {
 			end = strstr(msg, "</data>");
 			if (!end) {
-				fprintf(stderr, "firehose response truncated\n");
+				std::cerr << "firehose response truncated" << std::endl;
 				exit(1);
 			}
 
@@ -117,7 +118,7 @@ int Firehose::read(int wait, std::function<int(xmlNode*)> response_parser) {
 
 			nodes = Firehose::response_parse(msg, end - msg, &error);
 			if (!nodes) {
-				fprintf(stderr, "unable to parse response\n");
+				std::cerr << "unable to parse response" << std::endl;
 				return error;
 			}
 
@@ -150,7 +151,7 @@ int Firehose::write(xmlDoc* doc) {
 	xmlDocDumpMemory(doc, &s, &len);
 
 	if (qdl_debug)
-		fprintf(stderr, "FIREHOSE WRITE: %s\n", s);
+		std::cerr << "FIREHOSE WRITE: " << s << std::endl;
 
 	ret = Qdl::write(s, len, true);
 	saved_errno = errno;
@@ -233,8 +234,8 @@ int Firehose::configure(bool skip_storage_init, const char* storage) {
 	}
 
 	if (qdl_debug) {
-		fprintf(stderr, "[CONFIGURE] max payload size: %zu\n",
-				max_payload_size);
+		std::cerr << "[CONFIGURE] max payload size: " << max_payload_size
+				  << std::endl;
 	}
 
 	return 0;
@@ -258,12 +259,22 @@ int Firehose::apply_program(std::shared_ptr<program::Program>& program,
 	xmlNode* root;
 	xmlNode* node;
 	xmlDoc* doc;
-	std::shared_ptr<char> buf;
+	std::shared_ptr<char[]> buf;
 	time_t t0;
 	time_t t;
 	int left;
 	int ret;
 	int n;
+
+	if (fw_only) {
+		if (strcmp(program->label, "system") ||
+			strcmp(program->label, "cust") ||
+			strcmp(program->label, "userdata") ||
+			strcmp(program->label, "keystore") ||
+			strcmp(program->label, "sec")) {
+			std::cout << "[FIREHOSE]: skipping " << program->label << std::endl;
+		}
+	}
 
 	num_sectors = program->num_sectors;
 
@@ -280,7 +291,7 @@ int Firehose::apply_program(std::shared_ptr<program::Program>& program,
 		num_sectors = program->num_sectors;
 	}
 
-	buf = std::shared_ptr<char>(new char[max_payload_size]);
+	buf = std::shared_ptr<char[]>(new char[max_payload_size]);
 	if (!buf)
 		err(1, "failed to allocate sector buffer");
 
@@ -298,13 +309,13 @@ int Firehose::apply_program(std::shared_ptr<program::Program>& program,
 
 	ret = Firehose::write(doc);
 	if (ret < 0) {
-		fprintf(stderr, "[PROGRAM] failed to write program command\n");
+		std::cerr << "[PROGRAM] failed to write program command" << std::endl;
 		goto out;
 	}
 
 	ret = Firehose::read(-1, firehose_nop_parser);
 	if (ret) {
-		fprintf(stderr, "[PROGRAM] failed to setup programming\n");
+		std::cerr << "[PROGRAM] failed to setup programming" << std::endl;
 		goto out;
 	}
 
@@ -336,13 +347,15 @@ int Firehose::apply_program(std::shared_ptr<program::Program>& program,
 
 	ret = Firehose::read(-1, firehose_nop_parser);
 	if (ret) {
-		fprintf(stderr, "[PROGRAM] failed\n");
+		std::cerr << "[PROGRAM] failed" << std::endl;
 	} else if (t) {
-		fprintf(stderr, "[PROGRAM] flashed \"%s\" successfully at %ldkB/s\n",
-				program->label, program->sector_size * num_sectors / t / 1024);
+		std::cerr << "[PROGRAM] flashed \"" << program->label
+				  << "\" successfully at "
+				  << (program->sector_size * num_sectors / t / 1024) << "kB/s"
+				  << std::endl;
 	} else {
-		fprintf(stderr, "[PROGRAM] flashed \"%s\" successfully\n",
-				program->label);
+		std::cerr << "[PROGRAM] flashed \"" << program->label
+				  << "\" successfully" << std::endl;
 	}
 
 out:
@@ -377,7 +390,7 @@ int Firehose::apply_patch(std::shared_ptr<patch::Patch>& patch) {
 
 	ret = Firehose::read(-1, firehose_nop_parser);
 	if (ret)
-		fprintf(stderr, "[APPLY PATCH] %d\n", ret);
+		std::cerr << "[APPLY PATCH] " << ret << std::endl;
 
 out:
 	xmlFreeDoc(doc);
@@ -400,7 +413,7 @@ int Firehose::send_single_tag(xmlNode* node) {
 
 	ret = Firehose::read(-1, firehose_nop_parser);
 	if (ret) {
-		fprintf(stderr, "[UFS] %s err %d\n", __func__, ret);
+		std::cerr << "[UFS] " << __func__ << " err " << ret << std::endl;
 		ret = -EINVAL;
 	}
 
@@ -431,7 +444,7 @@ int Firehose::apply_ufs_common(std::shared_ptr<ufs::Common>& ufs) {
 
 	ret = Firehose::send_single_tag(node_to_send);
 	if (ret)
-		fprintf(stderr, "[APPLY UFS common] %d\n", ret);
+		std::cerr << "[APPLY UFS common] " << ret << std::endl;
 
 	return ret;
 }
@@ -460,7 +473,7 @@ int Firehose::apply_ufs_body(std::shared_ptr<ufs::Body>& ufs) {
 
 	ret = Firehose::send_single_tag(node_to_send);
 	if (ret)
-		fprintf(stderr, "[APPLY UFS body] %d\n", ret);
+		std::cerr << "[APPLY UFS body] " << ret << std::endl;
 
 	return ret;
 }
@@ -477,7 +490,7 @@ int Firehose::apply_ufs_epilogue(std::shared_ptr<ufs::Epilogue>& ufs,
 
 	ret = Firehose::send_single_tag(node_to_send);
 	if (ret)
-		fprintf(stderr, "[APPLY UFS epilogue] %d\n", ret);
+		std::cerr << "[APPLY UFS epilogue] " << ret << std::endl;
 
 	return ret;
 }
@@ -502,11 +515,12 @@ int Firehose::set_bootable(int part) {
 
 	ret = Firehose::read(-1, firehose_nop_parser);
 	if (ret) {
-		fprintf(stderr, "failed to mark partition %d as bootable\n", part);
+		std::cerr << "failed to mark partition " << part << " as bootable"
+				  << std::endl;
 		return -1;
 	}
 
-	printf("partition %d is now bootable\n", part);
+	std::cout << "partition " << part << " is now bootable" << std::endl;
 	return 0;
 }
 
@@ -546,9 +560,9 @@ int Firehose::run(const char* incdir, const char* storage) {
 			return ret;
 		ret = ufs::provisioning_execute(this);
 		if (!ret)
-			printf("UFS provisioning succeeded\n");
+			std::cout << "UFS provisioning succeeded" << std::endl;
 		else
-			printf("UFS provisioning failed\n");
+			std::cout << "UFS provisioning failed" << std::endl;
 		return ret;
 	}
 
@@ -556,7 +570,7 @@ int Firehose::run(const char* incdir, const char* storage) {
 	if (ret)
 		return ret;
 
-	ret = program::execute(static_cast<program::program_apply*>(this), incdir);
+	ret = program::execute(this, incdir);
 	if (ret)
 		return ret;
 
@@ -566,7 +580,7 @@ int Firehose::run(const char* incdir, const char* storage) {
 
 	bootable = program::find_bootable_partition();
 	if (bootable < 0)
-		fprintf(stderr, "no boot partition found\n");
+		std::cerr << "no boot partition found" << std::endl;
 	else
 		Firehose::set_bootable(bootable);
 

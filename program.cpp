@@ -51,7 +51,7 @@ int load(const char* program_file) {
 
 	doc = xmlReadFile(program_file, NULL, 0);
 	if (!doc) {
-		fprintf(stderr, "[PROGRAM] failed to parse %s\n", program_file);
+		std::cerr << "[PROGRAM] failed to parse " << program_file << std::endl;
 		return -EINVAL;
 	}
 
@@ -61,8 +61,8 @@ int load(const char* program_file) {
 			continue;
 
 		if (xmlStrcmp(node->name, (xmlChar*)"program")) {
-			fprintf(stderr, "[PROGRAM] unrecognized tag \"%s\", ignoring\n",
-					node->name);
+			std::cerr << "[PROGRAM] unrecognized tag \"" << node->name
+					  << "\", ignoring" << std::endl;
 			continue;
 		}
 
@@ -83,7 +83,7 @@ int load(const char* program_file) {
 		program->start_sector = attr_as_string(node, "start_sector", &errors);
 
 		if (errors) {
-			fprintf(stderr, "[PROGRAM] errors while parsing program\n");
+			std::cerr << "[PROGRAM] errors while parsing program" << std::endl;
 			continue;
 		}
 
@@ -114,7 +114,9 @@ int execute(program_apply* ptr, const char* incdir) {
 
 		filename = program->filename;
 		if (incdir) {
-			snprintf(tmp, PATH_MAX, "%s/%s", incdir, filename);
+			std::stringstream ss;
+			ss << incdir << "/" << filename;
+			strncpy(tmp, ss.str().c_str(), PATH_MAX);
 			if (access(tmp, F_OK) != -1)
 				filename = tmp;
 		}
@@ -122,7 +124,8 @@ int execute(program_apply* ptr, const char* incdir) {
 		fd = open(filename, O_RDONLY);
 
 		if (fd < 0) {
-			printf("Unable to open %s...ignoring\n", program->filename);
+			std::cout << "Unable to open " << program->filename << "...ignoring"
+					  << std::endl;
 			continue;
 		}
 
