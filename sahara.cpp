@@ -50,8 +50,6 @@ int Sahara::read_common(const char* mbn, off_t offset, size_t len) {
 	if (progfd < 0)
 		return -errno;
 
-	scope_exit progfd_close([progfd]() { close(progfd); });
-
 	buf = std::shared_ptr<char[]>(new char[len]);
 	if (!buf)
 		return -ENOMEM;
@@ -65,6 +63,8 @@ int Sahara::read_common(const char* mbn, off_t offset, size_t len) {
 	n = Qdl::write(buf.get(), n, true);
 	if (n != len)
 		err(1, "failed to write %zu bytes to sahara", len);
+
+	close(progfd);
 
 	return 0;
 }

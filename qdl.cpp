@@ -201,7 +201,7 @@ int Qdl::usb_open() {
 	const char* dev_node;
 	struct udev* udev;
 	const char* path;
-	struct usbdevfs_ioctl cmd;
+	usbdevfs_ioctl cmd;
 	int mon_fd;
 	int intf = -1;
 	int ret;
@@ -301,7 +301,7 @@ found:
 }
 
 int Qdl::read(void* buf, size_t len, unsigned int timeout) {
-	struct usbdevfs_bulktransfer bulk = {};
+	usbdevfs_bulktransfer bulk;
 
 	bulk.ep = this->in_ep;
 	bulk.len = len;
@@ -313,7 +313,7 @@ int Qdl::read(void* buf, size_t len, unsigned int timeout) {
 
 int Qdl::write(const void* buf, size_t len, bool eot) {
 	unsigned char* data = (unsigned char*)buf;
-	struct usbdevfs_bulktransfer bulk = {};
+	usbdevfs_bulktransfer bulk;
 	unsigned count = 0;
 	size_t len_orig = len;
 	int n;
@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
 	int ret;
 	int opt;
 	bool qdl_finalize_provisioning = false;
-	std::shared_ptr<Firehose> qdl(new Firehose);
+	std::shared_ptr<Sahara> qdl(new Sahara);
 
 	static struct option options[] = {
 		{"debug", no_argument, 0, 'd'},
@@ -392,7 +392,7 @@ int main(int argc, char** argv) {
 		{"firmware", no_argument, 0, 'f'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "di:", options, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "fdi:", options, NULL)) != -1) {
 		switch (opt) {
 			case 'd':
 				qdl_debug = true;

@@ -267,12 +267,15 @@ int Firehose::apply_program(std::shared_ptr<program::Program>& program,
 	int n;
 
 	if (fw_only) {
-		if (strcmp(program->label, "system") ||
-			strcmp(program->label, "cust") ||
-			strcmp(program->label, "userdata") ||
-			strcmp(program->label, "keystore") ||
-			strcmp(program->label, "sec")) {
+		if (!strcmp(program->label, "system") ||
+			!strcmp(program->label, "cust") ||
+			!strcmp(program->label, "userdata") ||
+			!strcmp(program->label, "keystore") ||
+			!strcmp(program->label, "boot") ||
+			!strcmp(program->label, "recovery") ||
+			!strcmp(program->label, "sec")) {
 			std::cout << "[FIREHOSE]: skipping " << program->label << std::endl;
+			return 0;
 		}
 	}
 

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "qdl.h"
+#include "firehose.h"
 
 struct Sahara_pkt {
 	uint32_t cmd;
@@ -43,7 +43,7 @@ struct Sahara_pkt {
 	};
 };
 
-struct Sahara : Qdl {
+struct Sahara : Firehose {
 	int run(char* prog_mbn);
 
    private:
