@@ -30,5 +30,6 @@ unsigned attr_as_unsigned(xmlNode* node, const char* attr, int* errors);
 const char* attr_as_string(xmlNode* node, const char* attr, int* errors);
 
 extern bool qdl_debug;
+extern bool fw_only;
 
 #endif

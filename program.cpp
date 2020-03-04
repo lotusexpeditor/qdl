@@ -30,12 +30,15 @@
  */
 #include "program.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
+#include <iostream>
+#include <sstream>
 
 #include "qdl.h"
 namespace program {

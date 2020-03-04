@@ -21,8 +21,8 @@
 
 #include "scope_exit.h"
 
-void Sahara::hello(Sahara_pkt& pkt) {
-	Sahara_pkt resp;
+void Sahara::hello(Sahara::Pkt& pkt) {
+	Pkt resp;
 
 	assert(pkt.length == 0x30);
 
@@ -50,8 +50,6 @@ int Sahara::read_common(const char* mbn, off_t offset, size_t len) {
 	if (progfd < 0)
 		return -errno;
 
-	scope_exit progfd_close([progfd]() { close(progfd); });
-
 	buf = std::shared_ptr<char[]>(new char[len]);
 	if (!buf)
 		return -ENOMEM;
@@ -66,10 +64,12 @@ int Sahara::read_common(const char* mbn, off_t offset, size_t len) {
 	if (n != len)
 		err(1, "failed to write %zu bytes to sahara", len);
 
+	close(progfd);
+
 	return 0;
 }
 
-void Sahara::read(Sahara_pkt& pkt, const char* mbn) {
+void Sahara::read(Sahara::Pkt& pkt, const char* mbn) {
 	int ret;
 
 	assert(pkt.length == 0x14);
@@ -83,7 +83,7 @@ void Sahara::read(Sahara_pkt& pkt, const char* mbn) {
 		errx(1, "failed to read image chunk to sahara");
 }
 
-void Sahara::read64(Sahara_pkt& pkt, const char* mbn) {
+void Sahara::read64(Sahara::Pkt& pkt, const char* mbn) {
 	int ret;
 
 	assert(pkt.length == 0x20);
@@ -98,8 +98,8 @@ void Sahara::read64(Sahara_pkt& pkt, const char* mbn) {
 		errx(1, "failed to read image chunk to sahara");
 }
 
-void Sahara::eoi(Sahara_pkt& pkt) {
-	Sahara_pkt done;
+void Sahara::eoi(Sahara::Pkt& pkt) {
+	Pkt done;
 
 	assert(pkt.length == 0x10);
 
@@ -116,7 +116,7 @@ void Sahara::eoi(Sahara_pkt& pkt) {
 	Qdl::write(&done, done.length, true);
 }
 
-int Sahara::done(Sahara_pkt& pkt) {
+int Sahara::done(Sahara::Pkt& pkt) {
 	assert(pkt.length == 0xc);
 
 	std::cout << "DONE status: " << pkt.done_resp.status << std::endl;
@@ -125,7 +125,7 @@ int Sahara::done(Sahara_pkt& pkt) {
 }
 
 int Sahara::run(char* prog_mbn) {
-	Sahara_pkt* pkt;
+	Pkt* pkt;
 	char buf[4096];
 	char tmp[32];
 	bool done = false;
@@ -136,7 +136,7 @@ int Sahara::run(char* prog_mbn) {
 		if (n < 0)
 			break;
 
-		pkt = (Sahara_pkt*)buf;
+		pkt = (Sahara::Pkt*)buf;
 		if (n != pkt->length) {
 			std::cerr << "length not matching";
 			return -EINVAL;
