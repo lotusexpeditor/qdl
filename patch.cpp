@@ -69,9 +69,6 @@ int load(const char* patch_file) {
 
 	return 0;
 }
-int execute(std::shared_ptr<patch_apply>& p) {
-	return execute(p.get());
-}
 
 int execute(patch_apply* dev) {
 	std::shared_ptr<Patch> patch;
