@@ -301,7 +301,8 @@ found:
 }
 
 int Qdl::read(void* buf, size_t len, unsigned int timeout) {
-	usbdevfs_bulktransfer bulk;
+	struct usbdevfs_bulktransfer bulk;
+
 
 	bulk.ep = this->in_ep;
 	bulk.len = len;
@@ -313,7 +314,7 @@ int Qdl::read(void* buf, size_t len, unsigned int timeout) {
 
 int Qdl::write(const void* buf, size_t len, bool eot) {
 	unsigned char* data = (unsigned char*)buf;
-	usbdevfs_bulktransfer bulk;
+	struct usbdevfs_bulktransfer bulk;
 	unsigned count = 0;
 	size_t len_orig = len;
 	int n;
@@ -370,7 +371,8 @@ int Qdl::write(const void* buf, size_t len, bool eot) {
 static void print_usage() {
 	extern const char* __progname;
 	std::cerr << __progname
-			  << " [--debug] [--storage <emmc|ufs>] [--finalize-provisioning] "
+			  << " [--debug] [--firmware] [--storage <emmc|ufs>] "
+				 "[--finalize-provisioning] "
 				 "[--include <PATH>] <prog.mbn> [<program> <patch> ...]"
 			  << std::endl;
 }
@@ -389,6 +391,7 @@ int main(int argc, char** argv) {
 		{"include", required_argument, 0, 'i'},
 		{"finalize-provisioning", no_argument, 0, 'l'},
 		{"storage", required_argument, 0, 's'},
+		{"help", no_argument, 0, 'h'},
 		{"firmware", no_argument, 0, 'f'},
 		{0, 0, 0, 0}};
 
@@ -409,6 +412,9 @@ int main(int argc, char** argv) {
 			case 'f':
 				fw_only = true;
 				break;
+			case 'h':
+				print_usage();
+				return 0;
 			default:
 				print_usage();
 				return 1;
