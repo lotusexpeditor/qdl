@@ -4,6 +4,7 @@
 
 #include "firehose.h"
 
+
 struct Sahara : Firehose {
 	struct Pkt {
 		uint32_t cmd;
