@@ -1,7 +1,7 @@
 OUT := qdl
 
-CXXFLAGS := -O2 -Wall -g `xml2-config --cflags` -Iinclude
-LDFLAGS := `xml2-config --libs` -ludev
+CXXFLAGS := -O2 -Wall -g $(shell xml2-config --cflags) -Iinclude -std=c++17
+LDFLAGS := $(shell xml2-config --libs) -ludev
 prefix := /usr/local
 
 BUILD_DIR := ./build
