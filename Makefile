@@ -4,7 +4,7 @@ CXXFLAGS := -O2 -Wall -g $(shell xml2-config --cflags) -Iinclude -std=c++17
 LDFLAGS := $(shell xml2-config --libs) -ludev
 prefix := /usr/local
 
-BUILD_DIR := ./build
+BUILD_DIR ?= ./build
 
 SRCS := firehose.cpp qdl.cpp sahara.cpp patch.cpp program.cpp ufs.cpp util.cpp
 OBJS = $(addprefix $(BUILD_DIR)/,$(SRCS:.cpp=.cpp.o))
