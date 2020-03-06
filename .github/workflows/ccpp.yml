@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: update GCC
-      run: apt-get update && apt-get install gcc-dev
+      run: sudo apt-get update && sudo apt-get install gcc-dev
     - name: make
       run: make
     - name: Upload artifacts
