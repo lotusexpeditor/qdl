@@ -1,8 +1,12 @@
 #ifndef __PATCH_H__
 #define __PATCH_H__
 
+#include <memory>
+
 #include "qdl.h"
+
 namespace patch {
+
 struct Patch {
 	unsigned sector_size;
 	unsigned byte_offset;
@@ -23,5 +27,6 @@ struct patch_apply {
 int load(const char* patch_file);
 int execute(std::shared_ptr<patch_apply>&);
 int execute(patch_apply*);
+
 }  // namespace patch
 #endif

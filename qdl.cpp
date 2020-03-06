@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
 
 #include "firehose.h"
 #include "patch.h"
@@ -302,7 +303,6 @@ found:
 
 int Qdl::read(void* buf, size_t len, unsigned int timeout) {
 	struct usbdevfs_bulktransfer bulk;
-
 
 	bulk.ep = this->in_ep;
 	bulk.len = len;

@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <sstream>
 
 #include "scope_exit.h"
@@ -56,9 +57,8 @@ int Sahara::read_common(const char* mbn, off_t offset, size_t len) {
 
 	lseek(progfd, offset, SEEK_SET);
 	n = ::read(progfd, buf.get(), len);
-	if (n != len) {
+	if (n != len)
 		return -errno;
-	}
 
 	n = Qdl::write(buf.get(), n, true);
 	if (n != len)

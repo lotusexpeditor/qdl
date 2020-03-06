@@ -1,10 +1,13 @@
 #ifndef __PROGRAM_H__
 #define __PROGRAM_H__
 
-#include <stdbool.h>
+#include <cstdbool>
+#include <memory>
 
 #include "qdl.h"
+
 namespace program {
+
 struct Program {
 	unsigned sector_size;
 	unsigned file_offset;
