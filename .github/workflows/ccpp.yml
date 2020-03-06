@@ -14,9 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: update GCC
-      run: sudo apt-get update && sudo apt-get install gcc-dev
+      run: sudo apt-get update && sudo apt-get install gcc-9 g++-9
     - name: make
-      run: make
+      run: CC=gcc-9 CXX=g++-9 make
     - name: Upload artifacts
       uses: actions/upload-artifact@v1.0.0
       with:
