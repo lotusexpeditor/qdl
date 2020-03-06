@@ -16,9 +16,9 @@ jobs:
     - name: update GCC
       run: sudo apt-get -y update && sudo apt-get -y install gcc-9 g++-9 libxml2 libxml2-dev
     - name: make
-      run: CC=gcc-9 CXX=g++-9 make
+      run: BUILD_DIR= CC=gcc-9 CXX=g++-9 make
     - name: Upload artifacts
       uses: actions/upload-artifact@v1.0.0
       with:
         name: qdl
-        path: build/qdl
+        path: qdl
