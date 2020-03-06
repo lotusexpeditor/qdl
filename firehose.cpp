@@ -225,7 +225,7 @@ int Firehose::configure(bool skip_storage_init, const char* storage) {
 		return ret;
 
 	/* Retry if remote proposed different size */
-	if (ret != max_payload_size) {
+	if ((size_t)ret != max_payload_size) {
 		ret = Firehose::send_configure(ret, skip_storage_init, storage);
 		if (ret < 0)
 			return ret;
@@ -327,20 +327,20 @@ int Firehose::apply_program(std::shared_ptr<program::Program>& program,
 	lseek(fd, program->file_offset * program->sector_size, SEEK_SET);
 	left = num_sectors;
 	while (left > 0) {
-		chunk_size = MIN(max_payload_size / program->sector_size, left);
+		chunk_size = MIN(max_payload_size / program->sector_size, (size_t)left);
 
 		n = ::read(fd, buf.get(), chunk_size * program->sector_size);
 		if (n < 0)
 			err(1, "failed to read");
 
-		if (n < max_payload_size)
+		if ((size_t)n < max_payload_size)
 			std::memset(buf.get() + n, 0, max_payload_size - n);
 
 		n = Qdl::write(buf.get(), chunk_size * program->sector_size, true);
 		if (n < 0)
 			err(1, "failed to write");
 
-		if (n != chunk_size * program->sector_size)
+		if ((size_t)n != chunk_size * program->sector_size)
 			err(1, "failed to write full sector");
 
 		left -= chunk_size;
