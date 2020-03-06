@@ -28,12 +28,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <ctype.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+
+#include <cctype>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
@@ -48,8 +50,7 @@ void print_hex_dump(const char* prefix, const void* buf, size_t len) {
 	uint8_t ch;
 	char line[16 * 3 + 16 + 1];
 	int li;
-	int i;
-	int j;
+	size_t i, j;
 
 	for (i = 0; i < len; i += 16) {
 		linelen = MIN(16, len - i);
@@ -75,7 +76,7 @@ void print_hex_dump(const char* prefix, const void* buf, size_t len) {
 
 		line[li] = '\0';
 
-		printf("%s %04x: %s\n", prefix, i, line);
+		printf("%s %04x: %s\n", prefix, (int)i, line);
 	}
 }
 

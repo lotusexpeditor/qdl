@@ -2,3 +2,4 @@
 qdl
 .vscode
 build
+.compile-flags
