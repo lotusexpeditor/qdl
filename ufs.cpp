@@ -68,9 +68,9 @@ static const char notice_bconfigdescrlock[] =
 bool need_provisioning(void) {
 	return !!ufs_epilogue_p;
 }
-
-std::shared_ptr<Common> parse_common_params(xmlNode* node,
-											bool finalize_provisioning) {
+static inline std::shared_ptr<Common> parse_common_params(
+	xmlNode* node,
+	bool finalize_provisioning) {
 	std::shared_ptr<Common> result(new Common);
 	int errors;
 
@@ -100,8 +100,7 @@ std::shared_ptr<Common> parse_common_params(xmlNode* node,
 
 	return result;
 }
-
-std::shared_ptr<Body> parse_body(xmlNode* node) {
+static inline std::shared_ptr<Body> parse_body(xmlNode* node) {
 	std::shared_ptr<Body> result(new Body);
 	int errors;
 
@@ -130,8 +129,7 @@ std::shared_ptr<Body> parse_body(xmlNode* node) {
 	}
 	return result;
 }
-
-std::shared_ptr<Epilogue> parse_epilogue(xmlNode* node) {
+static inline std::shared_ptr<Epilogue> parse_epilogue(xmlNode* node) {
 	std::shared_ptr<Epilogue> result(new Epilogue);
 	int errors = 0;
 
@@ -316,4 +314,5 @@ int provisioning_execute(ufs_apply* prov) {
 	}
 	return prov->apply_ufs_epilogue(ufs_epilogue_p, true);
 }
+
 }  // namespace ufs

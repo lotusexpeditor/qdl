@@ -30,10 +30,14 @@
 #pragma once
 #ifndef __UFS_H__
 #define __UFS_H__
-#include <stdbool.h>
+
+#include <cstdbool>
+#include <memory>
 
 #include "qdl.h"
+
 namespace ufs {
+
 struct Common {
 	unsigned bNumberLU;
 	bool bBootEnable;

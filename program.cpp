@@ -41,7 +41,9 @@
 #include <sstream>
 
 #include "qdl.h"
+
 namespace program {
+
 static std::shared_ptr<Program> programes;
 static std::shared_ptr<Program> programes_last;
 
