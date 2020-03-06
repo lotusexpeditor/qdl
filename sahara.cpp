@@ -137,7 +137,7 @@ int Sahara::run(char* prog_mbn) {
 			break;
 
 		pkt = (Sahara::Pkt*)buf;
-		if (n != pkt->length) {
+		if ((size_t)n != pkt->length) {
 			std::cerr << "length not matching";
 			return -EINVAL;
 		}

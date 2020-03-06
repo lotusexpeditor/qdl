@@ -103,20 +103,20 @@ int Qdl::parse_usb_desc(int fd, int* intf) {
 		return n;
 
 	ptr = (void*)desc;
-	end = ptr + n;
+	end = (void*)((char*)ptr + n);
 
 	dev = (usb_device_descriptor*)ptr;
 
-	/* Consider only devices with vid 0x0506 and product id 0x9008 */
+	/* Consider only devices with vid 0x05c6 and product id 0x9008 */
 	if (dev->idVendor != 0x05c6 || dev->idProduct != 0x9008)
 		return -EINVAL;
 
-	ptr += dev->bLength;
+	ptr = (void*)((char*)ptr + dev->bLength);
 	if (ptr >= end || dev->bDescriptorType != USB_DT_DEVICE)
 		return -EINVAL;
 
 	cfg = (usb_config_descriptor*)ptr;
-	ptr += cfg->bLength;
+	ptr = (void*)((char*)ptr + cfg->bLength);
 	if (ptr >= end || cfg->bDescriptorType != USB_DT_CONFIG)
 		return -EINVAL;
 
@@ -129,7 +129,7 @@ int Qdl::parse_usb_desc(int fd, int* intf) {
 			if (ifc->bLength < USB_DT_INTERFACE_SIZE)
 				return -EINVAL;
 
-			ptr += ifc->bLength;
+			ptr = (void*)((char*)ptr + ifc->bLength);
 		} while (ptr < end && ifc->bDescriptorType != USB_DT_INTERFACE);
 
 		in = -1;
@@ -146,7 +146,7 @@ int Qdl::parse_usb_desc(int fd, int* intf) {
 				if (ept->bLength < USB_DT_ENDPOINT_SIZE)
 					return -EINVAL;
 
-				ptr += ept->bLength;
+				ptr = (void*)((char*)ptr + ept->bLength);
 			} while (ptr < end && ept->bDescriptorType != USB_DT_ENDPOINT);
 
 			type = ept->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK;
@@ -166,7 +166,7 @@ int Qdl::parse_usb_desc(int fd, int* intf) {
 
 			hdr = (usb_descriptor_header*)ptr;
 			if (hdr->bDescriptorType == USB_DT_SS_ENDPOINT_COMP)
-				ptr += USB_DT_SS_EP_COMP_SIZE;
+				ptr = (void*)((char*)ptr + USB_DT_SS_EP_COMP_SIZE);
 		}
 
 		if (ifc->bInterfaceClass != 0xff)
@@ -378,7 +378,8 @@ static void print_usage() {
 }
 
 int main(int argc, char** argv) {
-	char *prog_mbn, *storage = "ufs";
+	const char* ufs_str = "ufs";
+	char *prog_mbn, *storage = (char*)ufs_str;
 	char* incdir = NULL;
 	qdl_file type;
 	int ret;

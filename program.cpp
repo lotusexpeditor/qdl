@@ -109,7 +109,7 @@ int load(const char* program_file) {
 int execute(program_apply* ptr, const char* incdir) {
 	std::shared_ptr<Program> program;
 	const char* filename;
-	char tmp[PATH_MAX];
+	char tmp[PATH_MAX + 1];
 	int ret;
 	int fd;
 
